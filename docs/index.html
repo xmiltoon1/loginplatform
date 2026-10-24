@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login Counter</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;color:white;background:linear-gradient(160deg,#1e1b4b,#7c3aed)}
+  .card{background:rgba(255,255,255,0.12);padding:30px;border-radius:20px;width:85%;max-width:340px}
+  input{width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border:none;border-radius:10px;font-size:1rem}
+  button{width:100%;padding:12px;margin-top:8px;border:none;border-radius:10px;font-size:1rem;background:#fff;color:#4c1d95;font-weight:bold}
+  .link{background:none;color:white;text-decoration:underline;font-weight:normal}
+  #n{font-size:6rem;margin:0;font-weight:bold}
+  #msg{color:#fecaca;min-height:1.2em}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="authView">
+    <h1 id="title">Log in</h1>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password (6+ characters)">
+    <p id="msg"></p>
+    <button id="submitBtn">Log in</button>
+    <button id="toggleBtn" class="link">No account? Sign up</button>
+  </div>
+  <div id="appView" class="hidden">
+    <h1>My Counter</h1>
+    <p id="n">0</p>
+    <p>Counts up by 1 every 2 minutes</p>
+    <p id="next"></p>
+    <p id="who"></p>
+    <button id="logoutBtn">Log out</button>
+  </div>
+</div>
+<script src="config.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp(window.firebaseConfig);
+const auth = getAuth(app);
+const $ = id => document.getElementById(id);
+let signup = false, timer = null;
+
+$("toggleBtn").onclick = () => {
+  signup = !signup;
+  $("title").textContent = signup ? "Sign up" : "Log in";
+  $("submitBtn").textContent = signup ? "Create account" : "Log in";
+  $("toggleBtn").textContent = signup ? "Have an account? Log in" : "No account? Sign up";
+  $("msg").textContent = "";
+};
+
+$("submitBtn").onclick = async () => {
+  $("msg").textContent = "";
+  try {
+    const e = $("email").value.trim(), p = $("password").value;
+    if (signup) await createUserWithEmailAndPassword(auth, e, p);
+    else await signInWithEmailAndPassword(auth, e, p);
+  } catch (err) {
+    $("msg").textContent = err.code.replace("auth/", "").replaceAll("-", " ");
+  }
+};
+
+$("logoutBtn").onclick = () => signOut(auth);
+
+const START = new Date("2026-10-24T00:00:00Z").getTime();
+const INTERVAL = 2 * 60 * 1000;
+function update() {
+  const elapsed = Date.now() - START;
+  $("n").textContent = Math.floor(elapsed / INTERVAL);
+  const left = Math.ceil((INTERVAL - (elapsed % INTERVAL)) / 1000);
+  $("next").textContent = "Next number in " + left + "s";
+}
+
+onAuthStateChanged(auth, user => {
+  $("authView").classList.toggle("hidden", !!user);
+  $("appView").classList.toggle("hidden", !user);
+  clearInterval(timer);
+  if (user) {
+    $("who").textContent = user.email;
+    update();
+    timer = setInterval(update, 1000);
+  }
+});
+</script>
+</body>
+</html>
