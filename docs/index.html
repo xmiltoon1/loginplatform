@@ -20,6 +20,7 @@
     <h1 id="title">Log in</h1>
     <input id="email" type="email" placeholder="Email">
     <input id="password" type="password" placeholder="Password (6+ characters)">
+    <button id="showBtn" class="link" type="button">Show password</button>
     <p id="msg"></p>
     <button id="submitBtn">Log in</button>
     <button id="toggleBtn" class="link">No account? Sign up</button>
@@ -60,6 +61,12 @@ $("submitBtn").onclick = async () => {
   } catch (err) {
     $("msg").textContent = err.code.replace("auth/", "").replaceAll("-", " ");
   }
+};
+
+$("showBtn").onclick = () => {
+  const hidden = $("password").type === "password";
+  $("password").type = hidden ? "text" : "password";
+  $("showBtn").textContent = hidden ? "Hide password" : "Show password";
 };
 
 $("logoutBtn").onclick = () => signOut(auth);
